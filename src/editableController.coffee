@@ -4,6 +4,7 @@ class EditableController extends Controller
     sel = @app.window.getSelection()
     sel.getRangeAt(0) if sel.rangeCount > 0
 
+  # AKA, the "move the cursor [before|after] the given node" function
   _setRange: (position, node, range=@_getRange()) ->
     return unless range
     node = $(node)[0]
@@ -67,6 +68,7 @@ class EditableController extends Controller
           @_setRange 'after', $inserted.contents().last()
 
     # modifying inserted element
+    # Correcting atwho-inserted and atwho-query classes based on current cursor position
     $(range.startContainer)
       .closest '.atwho-inserted'
       .addClass 'atwho-query'
@@ -75,25 +77,30 @@ class EditableController extends Controller
     if ($query = $ ".atwho-query", @app.document).length > 0 \
         and $query.is(':empty') and $query.text().length == 0
       $query.remove()
+      return
+
+    # EVERYTHING BELOW HERE IS EXECUTED ONLY IF THERE IS AN .atwho-query ELEMENT
 
     if not @_movingEvent e
       $query.removeClass 'atwho-inserted'
+    else
+      return if $query.length > 0
 
-    if $query.length > 0
-      switch e.which
-        when KEY_CODE.LEFT
-          @_setRange 'before', $query.get(0), range
-          $query.removeClass 'atwho-query'
-          return
-        when KEY_CODE.RIGHT
-          @_setRange 'after', $query.get(0).nextSibling, range
-          $query.removeClass 'atwho-query'
-          return
+    if $query.length > 0 and query_content = $query.text()
+      chosen = $query.attr('data-atwho-chosen-value')
+      if e.which = KEY_CODE.BACKSPACE
+        $query.remove()
+        return
+      else if chosen and query_content != chosen
+        # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
+        $query.before(query_content).remove()
+        return
+      # This ensures that the cursor stays where it's supposed to be when the user is typing in their query
+      @_setRange 'after', $query.get(0), range
 
     # matching
-    if $query.length > 0 and query_content = $query.attr('data-atwho-at-query')
-      $query.empty().html(query_content).attr('data-atwho-at-query', null)
-      @_setRange 'after', $query.get(0), range
+    # We now build a _range that contains the query text
+    # Note: @at = whatever symbol this controller is registered for ('@', '#', etc); the `flag`
     _range = range.cloneRange()
     _range.setStart range.startContainer, 0
     matched = @callbacks("matcher").call(this, @at, _range.toString(), @getOpt('startWithSpace'), @getOpt("acceptSpaceBar"))
@@ -156,6 +163,7 @@ class EditableController extends Controller
       .addClass 'atwho-inserted'
       .html content
       .attr 'data-atwho-at-query', "" + data['atwho-at'] + @query.text
+      .attr 'data-atwho-chosen-value', "" + data['atwho-at'] + content
     if range = @_getRange()
       range.setEndAfter @query.el[0]
       range.collapse false
