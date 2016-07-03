@@ -38,6 +38,15 @@ class EditableController extends Controller
     return unless range = @_getRange()
     return unless range.collapsed
 
+    # Check inserts for disparity on Backspace and delete
+    if e.which in [KEY_CODE.BACKSPACE, KEY_CODE.DELETE]
+      @$inputor.find('[data-atwho-chosen-value]')
+        .each () ->
+          console.log "Wre are compareking \"" + $(this).text() + "\" and \"" + $(this).attr('data-atwho-chosen-value') + "\""
+          if $(this).text() != $(this).attr('data-atwho-chosen-value')
+            $(this).remove()
+      return
+
     if e.which == KEY_CODE.ENTER
       ($query = $(range.startContainer).closest '.atwho-query')
         .contents().unwrap()
@@ -74,7 +83,10 @@ class EditableController extends Controller
       .addClass 'atwho-query'
       .siblings().removeClass 'atwho-query'
 
-    if ($query = $ ".atwho-query", @app.document).length > 0 \
+    $query = $ range.startContainer
+      .closest '.atwho-query'
+
+    if $query.length > 0 \
         and $query.is(':empty') and $query.text().length == 0
       $query.remove()
       return
@@ -88,10 +100,7 @@ class EditableController extends Controller
 
     if $query.length > 0 and query_content = $query.text()
       chosen = $query.attr('data-atwho-chosen-value')
-      if e.which = KEY_CODE.BACKSPACE
-        $query.remove()
-        return
-      else if chosen and query_content != chosen
+      if chosen and query_content != chosen
         # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
         $query.before(query_content).remove()
         return
