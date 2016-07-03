@@ -38,6 +38,10 @@ class EditableController extends Controller
     return unless range = @_getRange()
     return unless range.collapsed
 
+    # No <font>s allowed
+    @$inputor.find('font').each () ->
+      $(this).before($(this).text()).remove()
+
     if e.which == KEY_CODE.ENTER
       ($query = $(range.startContainer).closest '.atwho-query')
         .contents().unwrap()

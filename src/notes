@@ -1,0 +1,39 @@
+Fun fact, there's only one .atwho-query element on the page at any given time,
+so if you see `$ .atwho-query`, it's targeting one particular element.
+
+What does catchQuery do entirely?
+  Catch query is fired on keyup, and given an keyup event, known as `e`
+
+  1. Early exit for <Enter>
+  2. Firefox handling
+  3. "Modifying inserted element" (correcting any local .atwho-* classes)
+  4. Handle arrow keys (*did a fix here)
+  5. What to do if you are inside an inserted text and do something
+    5.1 Backspace = delete the inserted text
+    5.2 Character = keep text, but it no longer counts as inserted text anymore
+
+  The function quits right away if there is no range, or if there is a range, but it isn't just the cursor
+  position (ie, if the user has something highlighted, nothing happens in this function)
+
+  EARLY EXIT: catchQuery exists if it was called as a consequence of an <Enter> keypress, doing the following:
+    * It unwraps the nearest `.atwho-query` element, meaning that this happens:
+      "<span class='atwho-query'>Mar</span>" =Becomes=> "Mar"
+    * Some special handling has to happen if the query was empty
+    * The last `.atwho-query` element on the page gets unwrapped, with no reasoning or explanation provided... :(
+    That's all that catchQuery does if the user presses <Enter>
+
+  Next, some Firefox-specific stuff happens.
+    * If the cursor is positioned at the beginning of the input element, the "ranges are cleared". I'm not entirely
+      what that means, but I do know that when I call it in the console, whatever I have highlighted get un-highlighted
+    * Some special stuff happens if you press backspace in Firefox too, I'll skip it for now
+
+  A few stumbling blocks:
+    range.startContainer. According to Mozilla, this is going to be the DOM element that the range begins IN. This
+      is used a lot to determine if the selection / cursor position is inside of an inserted text or something
+    jQuery's `closest` function could also have been named `firstParent`, because that's what it does
+
+  Next, if we are inside an .atwho-inserted, ...
+    * Revoke the .atwho-query class from everyone else and pin it on this one
+    * If the query is empty, remove it away
+    * If the user did anything other can press the arrow keys, mark this .atwho-inserted as no longer .atwho-inserted
+
