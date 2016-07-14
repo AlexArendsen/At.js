@@ -38,6 +38,12 @@ class EditableController extends Controller
     return unless range = @_getRange()
     return unless range.collapsed
 
+    console.log "================================================================="
+
+    console.log "Key code: ", e.which
+
+    console.log "1"
+
     # No <font>s allowed
     @$inputor.find('font').each () ->
       $(this).before($(this).text()).remove()
@@ -52,24 +58,32 @@ class EditableController extends Controller
       @_clearRange()
       return
 
+    console.log "2"
+
     # absorb range
     # The range at the end of an element is not inside in firefox but not others browsers including IE.
     # To normolize them, we have to move the range inside the element while deleting content or moving caret right after .atwho-inserted
     if /firefox/i.test(navigator.userAgent)
+      console.log "f1"
       if $(range.startContainer).is @$inputor
-        @_clearRange()
-        return
+        console.log "f2"
+        # @_clearRange()
+        # return
       if e.which == KEY_CODE.BACKSPACE and range.startContainer.nodeType == document.ELEMENT_NODE \
           and (offset = range.startOffset - 1) >= 0
+        console.log "f3"
         _range = range.cloneRange()
         _range.setStart range.startContainer, offset
         if $(_range.cloneContents()).contents().last().is '.atwho-inserted'
           inserted = $(range.startContainer).contents().get(offset)
           @_setRange 'after', $(inserted).contents().last()
       else if e.which == KEY_CODE.LEFT and range.startContainer.nodeType == document.TEXT_NODE
+        console.log "f4"
         $inserted = $ range.startContainer.previousSibling
         if $inserted.is('.atwho-inserted') and range.startOffset == 0
+          console.log "f5"
           @_setRange 'after', $inserted.contents().last()
+
 
     # modifying inserted element
     # Correcting atwho-inserted and atwho-query classes based on current cursor position
@@ -78,29 +92,41 @@ class EditableController extends Controller
       .addClass 'atwho-query'
       .siblings().removeClass 'atwho-query'
 
+
+    console.log "3"
+
     if ($query = $ ".atwho-query", @app.document).length > 0 \
         and $query.is(':empty') and $query.text().length == 0
       $query.remove()
       return
 
+    console.log "4"
+
     # EVERYTHING BELOW HERE IS EXECUTED ONLY IF THERE IS AN .atwho-query ELEMENT
 
     if not @_movingEvent e
+      console.log "5a"
       $query.removeClass 'atwho-inserted'
     else
+      console.log "5b"
       return if $query.length > 0
 
     if $query.length > 0 and query_content = $query.text()
+      console.log "6"
       chosen = $query.attr('data-atwho-chosen-value')
-      if e.which = KEY_CODE.BACKSPACE
+      if e.which == KEY_CODE.BACKSPACE
+        console.log "6a"
         $query.remove()
         return
       else if chosen and query_content != chosen
+        console.log "6b"
         # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
         $query.before(query_content).remove()
         return
       # This ensures that the cursor stays where it's supposed to be when the user is typing in their query
       @_setRange 'after', $query.get(0), range
+
+    console.log "7"
 
     # matching
     # We now build a _range that contains the query text
@@ -109,6 +135,8 @@ class EditableController extends Controller
     _range.setStart range.startContainer, 0
     matched = @callbacks("matcher").call(this, @at, _range.toString(), @getOpt('startWithSpace'), @getOpt("acceptSpaceBar"))
     isString = typeof matched is 'string'
+
+    console.log "8"
 
     # wrapping query with .atwho-query
     if $query.length == 0 and isString \
@@ -120,26 +148,35 @@ class EditableController extends Controller
       range.surroundContents $query.get 0
       lastNode = $query.contents().last().get(0)
       if /firefox/i.test navigator.userAgent
+        console.log "8f"
         range.setStart lastNode, lastNode.length
         range.setEnd lastNode, lastNode.length
         @_clearRange range
       else
+        console.log "8o"
         @_setRange 'after', lastNode, range
 
+    console.log "9"
     return if isString and matched.length < @getOpt('minLen', 0)
+    console.log "10", @getOpt('maxLen', 20)
 
     # handle the matched result
-    if isString and matched.length <= @getOpt('maxLen', 20)
+    if isString and matched != null and matched.length <= @getOpt('maxLen', 20)
+      console.log "10a", isString, matched, ";", matched.length
       query = text: matched, el: $query
       @trigger "matched", [@at, query.text]
       @query = query
     else
+      console.log "10b", isString, matched, matched.length
       @view.hide()
       @query = el: $query
       if $query.text().indexOf(this.at) >= 0
+        console.log "10b-1"
         if @_movingEvent(e) and $query.hasClass 'atwho-inserted'
+          console.log "10b-1a"
           $query.removeClass('atwho-query')
         else if false != @callbacks('afterMatchFailed').call this, @at, $query
+          console.log "10b-1b"
           @_setRange "after", @_unwrap $query.text($query.text()).contents().first()
       null
 
