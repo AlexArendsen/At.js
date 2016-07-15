@@ -61,8 +61,10 @@ class EditableController extends Controller
     console.log "2"
 
     # absorb range
-    # The range at the end of an element is not inside in firefox but not others browsers including IE.
-    # To normolize them, we have to move the range inside the element while deleting content or moving caret right after .atwho-inserted
+    # The range at the end of an element is not inside in firefox but not others
+    # browsers including IE. To normolize them, we have to move the range inside
+    # the element while deleting content or moving caret right after
+    # .atwho-inserted
     if /firefox/i.test(navigator.userAgent)
       console.log "f1"
       if $(range.startContainer).is @$inputor
@@ -111,6 +113,7 @@ class EditableController extends Controller
       console.log "5b"
       return if $query.length > 0
 
+    # If the value has been changed at all
     if $query.length > 0 and query_content = $query.text()
       console.log "6"
       chosen = $query.attr('data-atwho-chosen-value')
@@ -123,8 +126,11 @@ class EditableController extends Controller
         # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
         $query.before(query_content).remove()
         return
+
       # This ensures that the cursor stays where it's supposed to be when the user is typing in their query
-      @_setRange 'after', $query.get(0), range
+      # ONLY ON NOT FIREFOX THOUGH CUZ OF COURSE
+      if not /firefox/i.test navigator.userAgent
+        @_setRange 'after', $query.get(0), range
 
     console.log "7"
 
@@ -141,6 +147,7 @@ class EditableController extends Controller
     # wrapping query with .atwho-query
     if $query.length == 0 and isString \
         and (index = range.startOffset - @at.length - matched.length) >= 0
+      console.log "8-"
       range.setStart range.startContainer, index
       $query = $ '<span/>', @app.document
         .attr @getOpt "editableAtwhoQueryAttrs"
