@@ -90,6 +90,8 @@ class EditableController extends Controller
 
 
     # EVERYTHING BELOW HERE IS EXECUTED ONLY IF THERE IS AN .atwho-query ELEMENT
+    
+    wasAnInsertedMention = $query.is '.atwho-inserted'
 
     if not @_movingEvent e
       $query.removeClass 'atwho-inserted'
@@ -97,7 +99,7 @@ class EditableController extends Controller
       return if $query.length > 0
 
     # If the value has been changed at all
-    if $query.length > 0 and query_content = $query.text()
+    if $query.length > 0 and (query_content = $query.text()) and wasAnInsertedMention
       chosen = $query.attr('data-atwho-chosen-value')
       if e.which == KEY_CODE.BACKSPACE
         $query.remove()
@@ -173,6 +175,8 @@ class EditableController extends Controller
   insert: (content, $li) ->
     @$inputor.focus() unless @$inputor.is ':focus'
     suffix = if (suffix = @getOpt 'suffix') == "" then suffix else suffix or "\u00A0"
+    console.log $li
+    console.log $li.data('item-data')
     data = $li.data('item-data')
     @query.el
       .removeClass 'atwho-query'
