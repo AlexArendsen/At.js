@@ -42,7 +42,7 @@ class EditableController extends Controller
 
     console.log "Key code: ", e.which
 
-    console.log "1"
+    console.log "1", @at
 
     # No <font>s allowed
     @$inputor.find('font').each () ->
@@ -93,7 +93,6 @@ class EditableController extends Controller
       .closest '.atwho-inserted'
       .addClass 'atwho-query'
       .siblings().removeClass 'atwho-query'
-
 
     console.log "3"
 
