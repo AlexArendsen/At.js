@@ -182,8 +182,8 @@ class EditableController extends Controller
       .removeClass 'atwho-query'
       .addClass 'atwho-inserted'
       .html content
-      .attr 'data-atwho-at-query', "" + data['atwho-at'] + @query.text
-      .attr 'data-atwho-chosen-value', "" + data['atwho-at'] + content
+      .attr 'data-atwho-at-query', "" + data['atwho-at'] + data['name']
+      .attr 'data-atwho-chosen-value', "" + data['name']
     if range = @_getRange()
       range.setEndAfter @query.el[0]
       range.collapse false
