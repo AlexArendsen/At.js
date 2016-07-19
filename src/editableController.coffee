@@ -82,6 +82,9 @@ class EditableController extends Controller
       $query.remove()
       return
 
+    # If the cursor isn't inside of an .atwho-query element, remove the .atwho-query class
+    if !(query_parent = $(range.startContainer).closest('.atwho-query')).length
+      $('.atwho-query').removeClass 'atwho-query'
 
     # EVERYTHING BELOW HERE IS EXECUTED ONLY IF THERE IS AN .atwho-query ELEMENT
     
@@ -99,7 +102,6 @@ class EditableController extends Controller
         $query.remove()
         return
       else if chosen and query_content != chosen
-        # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
         $query.before(query_content).remove()
         return
 
