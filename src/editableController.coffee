@@ -117,11 +117,15 @@ class EditableController extends Controller
 
     # wrapping query with .atwho-query
     if $query.length == 0 and isString \
-        and (index = range.startOffset - @at.length - matched.length) >= 0
+        and (index = range.startOffset - @at.length - matched.length) >= 0 \
+        and range.startContainer.nodeType == document.TEXT_NODE
+      console.trace 123
+      console.log "before", range
       range.setStart range.startContainer, index
       $query = $ '<span/>', @app.document
         .attr @getOpt "editableAtwhoQueryAttrs"
         .addClass 'atwho-query'
+      console.log "after", range
       range.surroundContents $query.get 0
       lastNode = $query.contents().last().get(0)
       if /firefox/i.test navigator.userAgent
@@ -164,9 +168,11 @@ class EditableController extends Controller
   #
   # @param content [String] string to insert
   insert: (content, $li) ->
+    console.trace 123
     @$inputor.focus() unless @$inputor.is ':focus'
     suffix = if (suffix = @getOpt 'suffix') == "" then suffix else suffix or "\u00A0"
     data = $li.data('item-data')
+    console.log data
     @query.el
       .removeClass 'atwho-query'
       .addClass 'atwho-inserted'
