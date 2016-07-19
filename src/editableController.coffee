@@ -38,9 +38,6 @@ class EditableController extends Controller
     return unless range = @_getRange()
     return unless range.collapsed
 
-
-
-
     # No <font>s allowed
     @$inputor.find('font').each () ->
       $(this).before($(this).text()).remove()
@@ -49,12 +46,11 @@ class EditableController extends Controller
       ($query = $(range.startContainer).closest '.atwho-query')
         .contents().unwrap()
       $query.remove() if $query.is ':empty'
-      ($query = $ ".atwho-query", @app.document)
+      ($query = $ ".atwho-query", @inputor)
         .text $query.text()
         .contents().last().unwrap()
       @_clearRange()
       return
-
 
     # absorb range
     # The range at the end of an element is not inside in firefox but not others
@@ -74,7 +70,6 @@ class EditableController extends Controller
         if $inserted.is('.atwho-inserted') and range.startOffset == 0
           @_setRange 'after', $inserted.contents().last()
 
-
     # modifying inserted element
     # Correcting atwho-inserted and atwho-query classes based on current cursor position
     $(range.startContainer)
@@ -82,8 +77,7 @@ class EditableController extends Controller
       .addClass 'atwho-query'
       .siblings().removeClass 'atwho-query'
 
-
-    if ($query = $ ".atwho-query", @app.document).length > 0 \
+    if ($query = $ ".atwho-query", @inputor).length > 0 \
         and $query.is(':empty') and $query.text().length == 0
       $query.remove()
       return
@@ -108,11 +102,6 @@ class EditableController extends Controller
         # $query.empty().html(query_content).attr('data-atwho-chosen-value', null)
         $query.before(query_content).remove()
         return
-
-      # This ensures that the cursor stays where it's supposed to be when the user is typing in their query
-      # ONLY ON NOT FIREFOX THOUGH CUZ OF COURSE
-      if not /firefox/i.test navigator.userAgent
-        @_setRange 'after', $query.get(0), range
 
 
     # matching
@@ -175,8 +164,6 @@ class EditableController extends Controller
   insert: (content, $li) ->
     @$inputor.focus() unless @$inputor.is ':focus'
     suffix = if (suffix = @getOpt 'suffix') == "" then suffix else suffix or "\u00A0"
-    console.log $li
-    console.log $li.data('item-data')
     data = $li.data('item-data')
     @query.el
       .removeClass 'atwho-query'
