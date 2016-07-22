@@ -1,24 +1,3 @@
-/**
- * at.js - 1.5.1
- * Copyright (c) 2016 chord.luo <chord.luo@gmail.com>;
- * Homepage: http://ichord.github.com/At.js
- * License: MIT
- */
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module unless amdModuleId is set
-    define(["jquery"], function (a0) {
-      return (factory(a0));
-    });
-  } else if (typeof exports === 'object') {
-    // Node. Does not work with strict CommonJS, but
-    // only CommonJS-like environments that support module.exports,
-    // like Node.
-    module.exports = factory(require("jquery"));
-  } else {
-    factory(jQuery);
-  }
-}(this, function ($) {
 var DEFAULT_CALLBACKS, KEY_CODE;
 
 KEY_CODE = {
@@ -705,27 +684,26 @@ EditableController = (function(superClass) {
   };
 
   EditableController.prototype.catchQuery = function(e) {
-    var $inserted, $query, _range, index, inserted, isString, lastNode, matched, offset, query, query_content, range;
+    var $inserted, $query, _range, chosen, index, inserted, isString, lastNode, matched, offset, query, query_content, query_parent, range, wasAnInsertedMention;
     if (!(range = this._getRange())) {
       return;
     }
     if (!range.collapsed) {
       return;
     }
+    this.$inputor.find('font').each(function() {
+      return $(this).before($(this).text()).remove();
+    });
     if (e.which === KEY_CODE.ENTER) {
       ($query = $(range.startContainer).closest('.atwho-query')).contents().unwrap();
       if ($query.is(':empty')) {
         $query.remove();
       }
-      ($query = $(".atwho-query", this.app.document)).text($query.text()).contents().last().unwrap();
+      ($query = $(".atwho-query", this.inputor)).text($query.text()).contents().last().unwrap();
       this._clearRange();
       return;
     }
     if (/firefox/i.test(navigator.userAgent)) {
-      if ($(range.startContainer).is(this.$inputor)) {
-        this._clearRange();
-        return;
-      }
       if (e.which === KEY_CODE.BACKSPACE && range.startContainer.nodeType === document.ELEMENT_NODE && (offset = range.startOffset - 1) >= 0) {
         _range = range.cloneRange();
         _range.setStart(range.startContainer, offset);
@@ -741,35 +719,41 @@ EditableController = (function(superClass) {
       }
     }
     $(range.startContainer).closest('.atwho-inserted').addClass('atwho-query').siblings().removeClass('atwho-query');
-    if (($query = $(".atwho-query", this.app.document)).length > 0 && $query.is(':empty') && $query.text().length === 0) {
+    if (($query = $(".atwho-query", this.inputor)).length > 0 && $query.is(':empty') && $query.text().length === 0) {
       $query.remove();
+      return;
     }
+    if (!(query_parent = $(range.startContainer).closest('.atwho-query')).length) {
+      $('.atwho-query').removeClass('atwho-query');
+    }
+    wasAnInsertedMention = $query.is('.atwho-inserted');
     if (!this._movingEvent(e)) {
       $query.removeClass('atwho-inserted');
-    }
-    if ($query.length > 0) {
-      switch (e.which) {
-        case KEY_CODE.LEFT:
-          this._setRange('before', $query.get(0), range);
-          $query.removeClass('atwho-query');
-          return;
-        case KEY_CODE.RIGHT:
-          this._setRange('after', $query.get(0).nextSibling, range);
-          $query.removeClass('atwho-query');
-          return;
+    } else {
+      if ($query.length > 0) {
+        return;
       }
     }
-    if ($query.length > 0 && (query_content = $query.attr('data-atwho-at-query'))) {
-      $query.empty().html(query_content).attr('data-atwho-at-query', null);
-      this._setRange('after', $query.get(0), range);
+    if ($query.length > 0 && (query_content = $query.text()) && wasAnInsertedMention) {
+      chosen = $query.attr('data-atwho-chosen-value');
+      if (e.which === KEY_CODE.BACKSPACE) {
+        $query.remove();
+        return;
+      } else if (chosen && query_content !== chosen) {
+        $query.before(query_content).remove();
+        return;
+      }
     }
     _range = range.cloneRange();
     _range.setStart(range.startContainer, 0);
     matched = this.callbacks("matcher").call(this, this.at, _range.toString(), this.getOpt('startWithSpace'), this.getOpt("acceptSpaceBar"));
     isString = typeof matched === 'string';
-    if ($query.length === 0 && isString && (index = range.startOffset - this.at.length - matched.length) >= 0) {
+    if ($query.length === 0 && isString && (index = range.startOffset - this.at.length - matched.length) >= 0 && range.startContainer.nodeType === document.TEXT_NODE) {
+      console.trace(123);
+      console.log("before", range);
       range.setStart(range.startContainer, index);
       $query = $('<span/>', this.app.document).attr(this.getOpt("editableAtwhoQueryAttrs")).addClass('atwho-query');
+      console.log("after", range);
       range.surroundContents($query.get(0));
       lastNode = $query.contents().last().get(0);
       if (/firefox/i.test(navigator.userAgent)) {
@@ -783,7 +767,7 @@ EditableController = (function(superClass) {
     if (isString && matched.length < this.getOpt('minLen', 0)) {
       return;
     }
-    if (isString && matched.length <= this.getOpt('maxLen', 20)) {
+    if (isString && matched !== null && matched.length <= this.getOpt('maxLen', 20)) {
       query = {
         text: matched,
         el: $query
@@ -820,12 +804,14 @@ EditableController = (function(superClass) {
 
   EditableController.prototype.insert = function(content, $li) {
     var data, range, suffix, suffixNode;
+    console.trace(123);
     if (!this.$inputor.is(':focus')) {
       this.$inputor.focus();
     }
     suffix = (suffix = this.getOpt('suffix')) === "" ? suffix : suffix || "\u00A0";
     data = $li.data('item-data');
-    this.query.el.removeClass('atwho-query').addClass('atwho-inserted').html(content).attr('data-atwho-at-query', "" + data['atwho-at'] + this.query.text);
+    console.log(data);
+    this.query.el.removeClass('atwho-query').addClass('atwho-inserted').html(content).attr('data-atwho-at-query', "" + data['atwho-at'] + data['name']).attr('data-atwho-chosen-value', "" + data['name']);
     if (range = this._getRange()) {
       range.setEndAfter(this.query.el[0]);
       range.collapse(false);
@@ -1198,5 +1184,3 @@ $.fn.atwho["default"] = {
 };
 
 $.fn.atwho.debug = false;
-
-}));
